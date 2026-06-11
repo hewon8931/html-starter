@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport"/>
+<title>校招雷达 - 移动端原型带MBTI</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'PingFang SC','Helvetica Neue',sans-serif;background:#D1D5DB;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;overflow:hidden}
+.phone-container{width:375px;height:812px;background:#fff;border-radius:40px;box-shadow:0 25px 50px -12px rgba(0,0,0,.3);position:relative;overflow:hidden;flex-shrink:0}
+.status-bar{position:absolute;top:0;left:0;width:100%;height:44px;padding:0 28px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;z-index:300;color:#000;background:transparent}
+.status-bar .time{font-weight:700;letter-spacing:.5px}
+.status-icons{display:flex;gap:4px;align-items:center}
+.page{position:absolute;top:0;left:0;width:100%;height:100%;display:none;flex-direction:column;background:#fff;padding-top:44px;overflow:hidden;z-index:10}
+.page.active{display:flex;z-index:20;animation:fadeSlideIn .35s ease-out}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+.page-inner{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;-webkit-overflow-scrolling:touch}
+.scroll-hide::-webkit-scrollbar{display:none}
+.btn-primary{background:#2563EB;color:#fff;padding:14px 20px;border-radius:12px;font-weight:600;font-size:15px;text-align:center;cursor:pointer;border:none;transition:all .2s;display:block;width:100%}
+.btn-primary:active{transform:scale(.97);opacity:.9}
+.btn-primary:disabled{background:#D1D5DB;color:#9CA3AF;cursor:not-allowed;transform:none}
+.btn-outline{border:2px solid #2563EB;color:#2563EB;padding:14px;border-radius:12px;font-weight:600;font-size:15px;text-align:center;cursor:pointer;background:#fff;transition:all .2s}
+.btn-ghost{padding:14px;border-radius:12px;font-weight:600;font-size:15px;text-align:center;cursor:pointer;background:#F3F4F6;color:#6B7280;border:none}
+.option-card{border:2px solid #F3F4F6;border-radius:16px;padding:16px;cursor:pointer;transition:all .2s}
+.option-card.selected{border-color:#2563EB;background:#EFF6FF}
+.tag{padding:8px 16px;background:#F3F4F6;border-radius:20px;font-size:13px;cursor:pointer;transition:all .2s;display:inline-block;color:#374151;white-space:nowrap;user-select:none}
+.tag.selected{background:#2563EB;color:#fff}
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:80;display:flex;justify-content:center;align-items:center}
+.progress-bar{display:flex;gap:6px;margin-bottom:20px}
+.progress-bar .dot{flex:1;height:4px;border-radius:2px;background:#E5E7EB;transition:background .3s}
+.progress-bar .dot.active{background:#2563EB}
+
+/* 转盘相关样式 */
+.wheel-wrap{width:280px;height:280px;position:relative;margin:0 auto}
+.wheel-bg{width:100%;height:100%;border-radius:50%;position:relative;overflow:hidden;background:conic-gradient(#2563EB 0deg 324deg,#8B5CF6 324deg 353deg,#F43F5E 353deg 360deg);box-shadow:0 0 0 6px #fff,0 0 0 8px #E5E7EB,0 8px 24px rgba(0,0,0,.12)}
+.tick-mark{position:absolute;width:2px;height:12px;background:rgba(255,255,255,.5);left:50%;top:8px;transform-origin:50% 132px;z-index:3;border-radius:1px}
+.wheel-label{position:absolute;z-index:4;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.2);text-align:center;pointer-events:none;line-height:1.3}
+.wheel-ball{position:absolute;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f0f0f0,#999 50%,#555);box-shadow:0 2px 6px rgba(0,0,0,.4),inset 0 -2px 4px rgba(0,0,0,.2);z-index:10;pointer-events:none;transition:none}
+.wheel-center-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:#fff;border:3px solid #2563EB;box-shadow:0 4px 12px rgba(37,99,235,.3);z-index:15;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#2563EB;transition:all .2s}
+.wheel-center-btn:active{transform:translate(-50%,-50%) scale(.93)}
+
+.split-layout{display:flex;flex:1;overflow:hidden}
+.split-left{flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #F3F4F6;background:#fff}
+.split-right{width:180px;display:flex;flex-direction:column;overflow-y:auto;padding:8px;background:#FAFBFC;flex-shrink:0}
+.split-layout.half-half .split-left { flex: 0 0 50%; width: 50%; max-width: 50%; }
+.split-layout.half-half .split-right { flex: 0 0 50%; width: 50%; max-width: 50%; }
+
+.ai-loading-modal{background:#fff;border-radius:20px;padding:32px 28px;width:300px;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.ai-loading-icon{position:relative;width:64px;height:64px;margin-bottom:4px}
+.ai-loading-icon .doc-layer{position:absolute;width:48px;height:56px;background:#F3F4F6;border-radius:8px;border:1px solid #E5E7EB}
+.ai-loading-icon .doc-layer.back{top:4px;left:8px;transform:rotate(-6deg)}
+.ai-loading-icon .doc-layer.front{top:0;left:0;z-index:2;display:flex;align-items:center;justify-content:center;background:#fff}
+.ai-loading-icon .magnifier{position:absolute;bottom:-2px;right:-4px;z-index:3;width:28px;height:28px;border-radius:50%;background:#2563EB;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+.ai-step{display:flex;align-items:center;gap:10px;width:100%;padding:8px 0;font-size:13px;border-bottom:1px solid #F3F4F6}
+.ai-step:last-child{border-bottom:none}
+.ai-step .step-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.ai-step .step-icon.done{background:#2563EB;color:#fff}
+.ai-step .step-icon.pending{background:#E5E7EB;color:#9CA3AF}
+
+.loading-overlay{position:absolute;inset:0;background:rgba(255,255,255,.88);z-index:2000;display:none;flex-direction:column;align-items:center;justify-content:center}
+.loading-overlay.show{display:flex}
+.loading-spinner{width:44px;height:44px;border:4px solid #DBEAFE;border-top-color:#2563EB;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.form-field{margin-bottom:16px}
+.form-field label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.form-field input,.form-field textarea{width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid #E5E7EB;font-size:14px;outline:none;transition:border .2s;background:#fff;color:#111827}
+.form-field input:focus,.form-field textarea:focus{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-field textarea{min-height:100px;resize:vertical}
+.resume-card{width:130px;height:100px;background:#fff;border:1px solid #F3F4F6;padding:12px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);flex-shrink:0;cursor:pointer}
+.resume-card-add{width:44px;height:100px;background:#F9FAFB;border:1.5px dashed #D1D5DB;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer}
+.sidebar{width:64px;background:#F8FAFF;height:100%;display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:8px;border-right:1px solid #EFF6FF;flex-shrink:0}
+.sidebar-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;transition:all .2s;cursor:pointer;color:#93C5FD}
+.sidebar-icon.active{background:#2563EB;color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.25)}
+.search-bar{background:#F3F4F6;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.support-icon{position:absolute;bottom:20px;right:20px;width:40px;height:40px;background:#fff;border-radius:50%;box-shadow:0 4px 12px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;z-index:100;cursor:pointer}
+.nav-back { display:flex; align-items:center; gap:4px; font-size:14px; color:#9CA3AF; cursor:pointer; margin-bottom:12px; }
+.nav-back:active { opacity:0.7; }
+.mbti-card{background:#fff;border:2px solid #E5E7EB;border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.mbti-card:active{transform:scale(0.98);border-color:#2563EB;background:#EFF6FF}
+</style>
+</head>
+<body>
+<div class="phone-container">
+<div class="status-bar">
+<span class="time">09:41</span>
+<div class="status-icons">
+<iconify-icon icon="mdi:signal-cellular-3" style="font-size:15px"></iconify-icon>
+<iconify-icon icon="mdi:wifi" style="font-size:15px"></iconify-icon>
+<iconify-icon icon="mdi:battery" style="font-size:17px"></iconify-icon>
+</div>
+</div>
+<div class="support-icon">
+<iconify-icon icon="mdi:message-processing-outline" style="color:#2563EB;font-size:20px"></iconify-icon>
+</div>
+
+<div class="page active" id="page-welcome">
+<div class="page-inner px-8 pt-10 pb-8 items-center justify-between bg-gradient-to-b from-blue-50 to-white">
+<div class="flex-1 flex flex-col items-center justify-center text-center">
+<div class="w-20 h-20 bg-gradient-to-br from-[#2563EB] to-blue-400 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-blue-200">
+<iconify-icon icon="mdi:radar" style="color:#fff;font-size:44px"></iconify-icon>
+</div>
+<h1 class="text-[24px] font-black text-gray-900 mb-3 tracking-tight">校招雷达</h1>
+<p class="text-[14px] text-gray-500 leading-relaxed max-w-[280px] mb-8">别急着投递，先测测你的<br><span class="text-[#2563EB] font-bold">“求职人格”</span>与大厂JD的差距</p>
+</div>
+<div class="w-full space-y-4">
+<button class="btn-primary py-4 text-[16px] shadow-lg shadow-blue-200" onclick="switchPage('page-mbti-q1')">🔍 免费测一测你的求职人格</button>
+<div class="text-center text-gray-400 text-[13px] font-medium cursor-pointer" onclick="switchPage('page-login')">已有账号？直接登录</div>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-mbti-q1">
+<div class="page-inner px-6 pt-6 pb-8 bg-gray-50">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="w-full bg-gray-200 rounded-full h-1.5 mb-8"><div class="bg-[#2563EB] h-1.5 rounded-full transition-all" style="width: 50%"></div></div>
+<h2 class="text-[20px] font-bold text-gray-900 mb-6 leading-snug">面对心仪大厂的岗位 JD，你的第一反应通常是？</h2>
+<div class="space-y-3">
+<div class="mbti-card" onclick="answerMbti(1, 'page-mbti-q2')">
+    <div class="font-bold text-[15px] text-gray-800 mb-1">A. 简历像白纸，感觉自己啥也不配 😭</div>
+    <div class="text-[12px] text-gray-400">实在不知道该怎么包装有限的经历...</div>
+</div>
+<div class="mbti-card" onclick="answerMbti(2, 'page-mbti-q2')">
+    <div class="font-bold text-[15px] text-gray-800 mb-1">B. 经历很杂，对不上岗位要求 🤔</div>
+    <div class="text-[12px] text-gray-400">做过很多事，但很难提炼出高大上的关键词。</div>
+</div>
+<div class="mbti-card" onclick="answerMbti(3, 'page-mbti-q2')">
+    <div class="font-bold text-[15px] text-gray-800 mb-1">C. 懒得挨个改，干脆一套简历海投 😫</div>
+    <div class="text-[12px] text-gray-400">针对每个JD去修改实在太耗费精力了。</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-mbti-q2">
+<div class="page-inner px-6 pt-6 pb-8 bg-gray-50">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="w-full bg-gray-200 rounded-full h-1.5 mb-8"><div class="bg-[#2563EB] h-1.5 rounded-full transition-all" style="width: 100%"></div></div>
+<h2 class="text-[20px] font-bold text-gray-900 mb-6 leading-snug">你目前找工作的整体状态最符合以下哪种描述？</h2>
+<div class="space-y-3">
+<div class="mbti-card" onclick="answerMbti(1, 'page-mbti-result')">
+    <div class="font-bold text-[15px] text-gray-800 mb-1">A. 四处碰壁，收到一堆感谢信 🍂</div>
+    <div class="text-[12px] text-gray-400">投出去的简历常常石沉大海，缺乏自信。</div>
+</div>
+<div class="mbti-card" onclick="answerMbti(2, 'page-mbti-result')">
+    <div class="font-bold text-[15px] text-gray-800 mb-1">B. 无头苍蝇，看到稍微相关的就投 🪰</div>
+    <div class="text-[12px] text-gray-400">缺乏针对性策略，经常在初筛就被刷掉。</div>
+</div>
+<div class="mbti-card" onclick="answerMbti(3, 'page-mbti-result')">
+    <div class="font-bold text-[15px] text-gray-800 mb-1">C. 心智内耗，想找个工具帮我全自动搞定 🤖</div>
+    <div class="text-[12px] text-gray-400">实力在线，但繁杂的网申流程让人心力交瘁。</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-mbti-result">
+<div class="page-inner px-6 pt-10 pb-8 items-center bg-blue-50">
+<p class="text-[12px] text-blue-500 font-bold mb-2 tracking-widest uppercase">雷达 AI 诊断完毕</p>
+<h1 class="text-[28px] font-black text-[#2563EB] mb-6" id="mbti-title">小白探索型</h1>
+<div class="bg-white p-6 rounded-2xl shadow-md w-full relative mb-8 border border-blue-100">
+    <iconify-icon icon="mdi:format-quote-open" class="absolute text-blue-100 text-6xl -top-5 -left-2 z-0"></iconify-icon>
+    <p id="mbti-desc" class="text-[14px] text-gray-700 relative z-10 font-medium leading-relaxed">你目前没有相应的经历，或者经历太散。面对心仪的岗位常常感到自卑，不知如何包装自己。</p>
+</div>
+<div class="bg-[#2563EB] text-white p-5 rounded-2xl w-full mb-auto shadow-lg shadow-blue-200">
+    <h3 class="font-bold text-[15px] flex items-center gap-2 mb-2"><iconify-icon icon="mdi:lightning-bolt"></iconify-icon> 雷达专属解药</h3>
+    <p id="mbti-solution" class="text-[13px] leading-relaxed opacity-90">AI 深度挖掘你的校园日常闪光点，瞬间转化为大厂青睐的底层能力框架！</p>
+</div>
+<button class="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 font-bold text-[16px] py-4 rounded-xl shadow-lg mt-8 animate-pulse" onclick="switchPage('page-login')">
+    🎁 领取解药：解锁 30天全功能 VIP
+</button>
+<div class="text-center text-gray-400 text-[12px] mt-4 cursor-pointer" onclick="switchPage('page-mbti-q1')">重新测试</div>
+</div>
+</div>
+
+<div class="page" id="page-login">
+<div class="page-inner px-6 pt-6 pb-8">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="text-center mb-8">
+<div class="text-xl font-bold text-[#2563EB] mb-1">校招雷达</div>
+<p class="text-[13px] text-gray-400">登录后开启您的求职之旅</p>
+</div>
+<div class="space-y-3">
+<button class="w-full bg-[#07C160] text-white p-4 rounded-xl flex items-center justify-center gap-2 font-semibold text-[15px] cursor-pointer" onclick="mockLogin()">
+<iconify-icon icon="mdi:wechat" style="font-size:20px"></iconify-icon> 微信一键授权登录
+</button>
+<button class="w-full border-2 border-[#2563EB] text-[#2563EB] p-4 rounded-xl font-semibold text-[15px] flex items-center justify-center gap-2 cursor-pointer" onclick="mockLogin()">
+<iconify-icon icon="mdi:cellphone" style="font-size:20px"></iconify-icon> 手机号登录
+</button>
+<div class="flex items-center gap-4 py-2">
+<div class="flex-1 h-[1px] bg-gray-200"></div>
+<span class="text-gray-400 text-[12px]">或</span>
+<div class="flex-1 h-[1px] bg-gray-200"></div>
+</div>
+<input class="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none text-[14px]" placeholder="手机号/邮箱" type="text"/>
+<input class="w-full p-4 bg-gray-50 rounded-xl border border-gray-200 focus:border-[#2563EB] focus:ring-2 focus:ring-blue-100 outline-none text-[14px]" placeholder="密码" type="password"/>
+<button class="btn-primary" onclick="mockLogin()">登录</button>
+</div>
+<p class="mt-auto pt-6 text-center text-[10px] text-gray-400">新用户？点击即表示同意《用户协议》和《隐私策略》</p>
+</div>
+</div>
+
+<div class="page" id="page-info-1">
+<div class="page-inner px-6 pt-4 pb-8">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="progress-bar">
+<div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+</div>
+<h2 class="text-[20px] font-bold mb-1">您想筹备哪类招聘活动？</h2>
+<p class="text-[13px] text-gray-400 mb-6">选择您关注的方向，为您精准推荐</p>
+<div class="grid grid-cols-2 gap-3 mb-6">
+<div class="option-card flex flex-col items-center text-center gap-2" onclick="selectInfo1(this)"><span class="text-2xl">🎓</span><div class="font-bold text-[13px]">校园招聘</div><div class="text-[10px] text-gray-400">秋招/春招/提前批</div></div>
+<div class="option-card flex flex-col items-center text-center gap-2" onclick="selectInfo1(this)"><span class="text-2xl">💼</span><div class="font-bold text-[13px]">暑期实习</div><div class="text-[10px] text-gray-400">大厂暑期实习项目</div></div>
+<div class="option-card flex flex-col items-center text-center gap-2" onclick="selectInfo1(this)"><span class="text-2xl">🔄</span><div class="font-bold text-[13px]">转正实习</div><div class="text-[10px] text-gray-400">可转正日常实习</div></div>
+<div class="option-card flex flex-col items-center text-center gap-2" onclick="selectInfo1(this)"><span class="text-2xl">📝</span><div class="font-bold text-[13px]">项目经历</div><div class="text-[10px] text-gray-400">竞赛/科研/实践项目</div></div>
+</div>
+<div class="mt-auto space-y-3">
+<button class="btn-primary" disabled="" id="next-1" onclick="switchPage('page-info-2')">下一步 →</button>
+<div class="text-center text-gray-400 text-[13px] cursor-pointer" onclick="switchPage('page-info-2')">跳过 &gt;</div>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-info-2">
+<div class="page-inner px-6 pt-4 pb-8">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="progress-bar">
+<div class="dot active"></div><div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+</div>
+<h2 class="text-[20px] font-bold mb-1">您关注哪些类型的企业？</h2>
+<p class="text-[13px] text-gray-400 mb-6">根据目标企业类型提供定向服务</p>
+<div class="space-y-2.5 mb-6">
+<div class="option-card flex items-center gap-4" onclick="selectInfo2(this)"><span class="text-lg">🌐</span><div class="font-bold text-[13px]">互联网大厂</div></div>
+<div class="option-card flex items-center gap-4" onclick="selectInfo2(this)"><span class="text-lg">🏛️</span><div class="font-bold text-[13px]">国企 / 央企</div></div>
+<div class="option-card flex items-center gap-4" onclick="selectInfo2(this)"><span class="text-lg">🌍</span><div class="font-bold text-[13px]">外企</div></div>
+<div class="option-card flex items-center gap-4" onclick="selectInfo2(this)"><span class="text-lg">🚀</span><div class="font-bold text-[13px]">独角兽 / 创业公司</div></div>
+<div class="option-card flex items-center gap-4" onclick="selectInfo2(this)"><span class="text-lg">📋</span><div class="font-bold text-[13px]">事业单位 / 研究所</div></div>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 btn-ghost" onclick="goBack()">← 返回</button>
+<button class="flex-[2] btn-primary" disabled="" id="next-2" onclick="switchPage('page-info-3')">下一步 →</button>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-info-3">
+<div class="page-inner px-6 pt-4 pb-8">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="progress-bar">
+<div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot"></div>
+</div>
+<h2 class="text-[20px] font-bold mb-1">您的基本信息是什么？</h2>
+<p class="text-[13px] text-gray-400 mb-5">为您匹配最合适的岗位与批次</p>
+<div class="space-y-5 flex-1 overflow-y-auto scroll-hide">
+<div><label class="text-[13px] font-bold block mb-2.5">毕业年份 *</label>
+<div class="flex gap-2 flex-wrap">
+<div class="tag" onclick="toggleTag(this,'year')">2024届</div>
+<div class="tag" onclick="toggleTag(this,'year')">2025届</div>
+<div class="tag" onclick="toggleTag(this,'year')">2026届</div>
+<div class="tag" onclick="toggleTag(this,'year')">2027届</div>
+</div></div>
+<div><label class="text-[13px] font-bold block mb-2.5">学历等级 *</label>
+<div class="flex gap-2">
+<div class="tag" onclick="toggleTag(this,'degree')">本科</div>
+<div class="tag" onclick="toggleTag(this,'degree')">硕士</div>
+<div class="tag" onclick="toggleTag(this,'degree')">博士</div>
+</div></div>
+<div><label class="text-[13px] font-bold block mb-2.5">目标行业/方向 *</label>
+<div class="flex flex-wrap gap-2">
+<div class="tag" onclick="toggleTag(this,'industry')">互联网/IT</div>
+<div class="tag" onclick="toggleTag(this,'industry')">金融/投资</div>
+<div class="tag" onclick="toggleTag(this,'industry')">咨询/战略</div>
+<div class="tag" onclick="toggleTag(this,'industry')">市场营销</div>
+<div class="tag" onclick="toggleTag(this,'industry')">设计/创意</div>
+</div></div>
+</div>
+<div class="flex gap-3 mt-5">
+<button class="flex-1 btn-ghost" onclick="goBack()">← 返回</button>
+<button class="flex-[2] btn-primary" onclick="switchPage('page-info-4')">下一步 →</button>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-info-4">
+<div class="page-inner px-6 pt-4 pb-8">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="progress-bar">
+<div class="dot active"></div><div class="dot active"></div><div class="dot active"></div><div class="dot active"></div>
+</div>
+<h2 class="text-[20px] font-bold mb-1">您感兴趣的岗位是？</h2>
+<p class="text-[13px] text-gray-400 mb-5">选择目标岗位与招聘批次</p>
+<div class="space-y-5 flex-1 overflow-y-auto scroll-hide">
+<div><label class="text-[13px] font-bold block mb-2.5">具体岗位 *</label>
+<div class="flex flex-wrap gap-2">
+<div class="tag" onclick="toggleTag(this,'job')">产品经理</div>
+<div class="tag selected" onclick="toggleTag(this,'job')">前端开发</div>
+<div class="tag" onclick="toggleTag(this,'job')">后端开发</div>
+<div class="tag" onclick="toggleTag(this,'job')">数据分析</div>
+<div class="tag" onclick="toggleTag(this,'job')">运营</div>
+</div></div>
+<div><label class="text-[13px] font-bold block mb-2.5">招聘批次 *</label>
+<div class="flex flex-wrap gap-2">
+<div class="tag selected" onclick="toggleTag(this,'batch')">秋招</div>
+<div class="tag" onclick="toggleTag(this,'batch')">春招</div>
+<div class="tag" onclick="toggleTag(this,'batch')">暑期实习</div>
+<div class="tag" onclick="toggleTag(this,'batch')">转正实习</div>
+</div></div>
+</div>
+<div class="flex gap-3 mt-5">
+<button class="flex-1 btn-ghost" onclick="goBack()">← 返回</button>
+<button class="flex-[2] btn-primary" onclick="switchPage('page-complete')">完成</button>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-complete">
+<div class="page-inner px-8 pt-10 pb-8 items-center justify-between">
+<div class="nav-back w-full" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="flex-1 flex flex-col items-center justify-center text-center">
+<div class="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200">
+<iconify-icon icon="mdi:check" style="color:#fff;font-size:40px"></iconify-icon>
+</div>
+<h1 class="text-[22px] font-bold text-gray-900 mb-3">准备就绪！</h1>
+<p class="text-[14px] text-gray-500 leading-relaxed">现在与校招雷达一起<br/>开启您的定制化求职之旅吧！</p>
+</div>
+<div class="w-full space-y-2">
+    <button class="btn-primary" onclick="switchPage('page-tutorial')">查看新人向导 →</button>
+    <button class="w-full bg-gray-100 text-gray-600 font-semibold py-3.5 rounded-xl text-[14px]" onclick="switchPage('page-roulette')">跳过进入抽奖</button>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-tutorial">
+<div class="page-inner px-6 pt-5 pb-8 items-center justify-between">
+<div class="nav-back w-full" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="bg-white rounded-2xl p-4 w-full flex-1 flex flex-col justify-center">
+<h3 class="text-[18px] font-bold mb-2 text-center text-gray-800">💡 欢迎体验：校招雷达新手指引</h3>
+<p class="text-[12px] text-gray-400 mb-6 text-center">在这里您可以自由通过大白话录入经历，由 AI 辅助重构</p>
+<div class="space-y-4">
+<div class="flex items-start gap-3 bg-blue-50 rounded-xl p-3.5 border border-blue-100">
+<div class="w-7 h-7 bg-[#2563EB] rounded-full flex items-center justify-center text-white font-bold text-[12px] flex-shrink-0">1</div>
+<div><div class="font-bold text-[13px] text-gray-800">📝 手写大白话经历</div><div class="text-[11px] text-gray-500">无需注意格式，输入实习 or 项目琐碎细节</div></div>
+</div>
+<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3.5">
+<div class="w-7 h-7 bg-[#2563EB] rounded-full flex items-center justify-center text-white font-bold text-[12px] flex-shrink-0">2</div>
+<div><div class="font-bold text-[13px] text-gray-800">⚡ AI 智能对齐 JD</div><div class="text-[11px] text-gray-500">系统全自动解析并提取岗位的隐含硬性特征</div></div>
+</div>
+<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3.5">
+<div class="w-7 h-7 bg-[#2563EB] rounded-full flex items-center justify-center text-white font-bold text-[12px] flex-shrink-0">3</div>
+<div><div class="font-bold text-[13px] text-gray-800">📄 核心求职信生成</div><div class="text-[11px] text-gray-500">利用大厂通用的 STAR 原则瞬间生成高分文书</div></div>
+</div>
+</div>
+</div>
+<button class="btn-primary mt-6" onclick="switchPage('page-roulette')">查看新人专属福利 →</button>
+</div>
+</div>
+
+<div class="page" id="page-roulette">
+<div class="modal-overlay">
+<div class="bg-white rounded-[28px] p-6 text-center shadow-2xl w-[330px]">
+<h3 class="text-[17px] font-bold mb-1">🎉 注册成功！获得抽奖机会！</h3>
+<p class="text-[12px] text-gray-400 mb-5">点击中间按钮转动转盘解锁你的解药</p>
+<div class="wheel-wrap mb-5">
+<div class="wheel-bg" id="wheel-bg">
+<div class="tick-mark" style="transform:rotate(0deg)"></div>
+<div class="tick-mark" style="transform:rotate(30deg)"></div>
+<div class="tick-mark" style="transform:rotate(60deg)"></div>
+<div class="tick-mark" style="transform:rotate(90deg)"></div>
+<div class="tick-mark" style="transform:rotate(120deg)"></div>
+<div class="tick-mark" style="transform:rotate(150deg)"></div>
+<div class="tick-mark" style="transform:rotate(180deg)"></div>
+<div class="tick-mark" style="transform:rotate(210deg)"></div>
+<div class="tick-mark" style="transform:rotate(240deg)"></div>
+<div class="tick-mark" style="transform:rotate(270deg)"></div>
+<div class="tick-mark" style="transform:rotate(300deg)"></div>
+<div class="tick-mark" style="transform:rotate(330deg)"></div>
+<div class="wheel-label" style="top:38%;left:50%;transform:translate(-50%,-50%)"><span style="font-size:14px">🥇</span><br/>30天VIP</div>
+<div class="wheel-label" style="top:62%;left:76%;transform:translate(-50%,-50%)"><span style="font-size:11px">🥈</span><br/><span style="font-size:10px">7天体验卡</span></div>
+<div class="wheel-label" style="top:68%;left:28%;transform:translate(-50%,-50%)"><span style="font-size:11px">🥉</span><br/><span style="font-size:10px">谢谢参与</span></div>
+<div class="wheel-ball" id="wheel-ball" style="left:131px;top:12px"></div>
+</div>
+<div class="wheel-center-btn" id="wheel-spin-btn" onclick="startWheelSpin()">抽奖</div>
+</div>
+<div class="hidden text-[#2563EB] font-bold text-[15px] mb-3" id="wheel-result"></div>
+<button class="hidden btn-primary" id="wheel-claim-btn" onclick="switchPage('page-ticket')">领取奖品并开启主页</button>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-ticket">
+<div class="modal-overlay">
+<div class="w-[300px] bg-gradient-to-b from-[#2563EB] to-[#1D4ED8] rounded-[28px] p-8 text-center shadow-2xl">
+<div class="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-5 relative overflow-hidden border border-white/20">
+<div class="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#1D4ED8] rounded-full"></div>
+<div class="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-[#1D4ED8] rounded-full"></div>
+<div class="text-white/70 text-[10px] tracking-wider mb-1">校招雷达 VIP</div>
+<div class="text-white text-xl font-black mb-2" id="ticket-title">30天免费VIP</div>
+<div class="flex justify-center gap-1 text-yellow-300 text-sm">
+<iconify-icon icon="mdi:star"></iconify-icon>
+<iconify-icon icon="mdi:star"></iconify-icon>
+<iconify-icon icon="mdi:star"></iconify-icon>
+</div>
+</div>
+<div class="text-white mb-6">
+<div class="font-bold text-[15px]" id="ticket-desc">全功能 30天免费体验特权</div>
+<div class="text-[12px] opacity-80 mt-1">从今天起，30天内免费使用雷达全部高阶功能</div>
+</div>
+<button class="w-full bg-white text-[#2563EB] py-4 rounded-xl font-bold text-[15px]" onclick="switchPage('page-home')">我知道了，进入主页</button>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-home">
+<div class="flex h-full" style="padding-top:44px">
+<div class="sidebar">
+<div class="w-9 h-9 bg-[#2563EB] rounded-full flex items-center justify-center text-white font-bold text-xs mb-2 shadow-md">
+    <iconify-icon icon="mdi:radar" style="font-size:20px"></iconify-icon>
+</div>
+<div class="flex flex-col gap-5 mt-2">
+<div class="sidebar-icon active"><iconify-icon icon="mdi:home" style="font-size:20px"></iconify-icon></div>
+<div class="sidebar-icon" onclick="switchPage('page-resume-history')"><iconify-icon icon="mdi:file-document-outline" style="font-size:20px"></iconify-icon></div>
+<div class="sidebar-icon"><iconify-icon icon="mdi:bullseye-arrow" style="font-size:20px"></iconify-icon></div>
+</div>
+<div class="mt-auto cursor-pointer" onclick="switchPage('page-profile')"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-300 to-blue-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow">我</div></div>
+</div>
+<div class="flex-1 flex flex-col overflow-hidden">
+<div class="flex-1 overflow-y-auto scroll-hide px-4 pt-4 pb-4">
+<div class="mb-3">
+    <h2 class="text-center font-bold text-[13px] text-gray-800 flex items-center justify-center gap-1">✨ 别急着投递，先看看你和 JD 差在哪里 ✨</h2>
+</div>
+<div class="search-bar mb-6 shadow-sm border border-gray-100">
+<iconify-icon icon="mdi:magnify" style="color:#9CA3AF;font-size:18px"></iconify-icon>
+<input type="text" id="home-jd-url" class="bg-transparent border-none outline-none flex-1 text-[13px] text-gray-700" placeholder="粘贴 JD 链接，看看匹配度" value="https://careers.tencent.com/jobdesc.html?id=12345" />
+<div class="w-7 h-7 bg-[#2563EB] rounded-lg flex items-center justify-center cursor-pointer shadow active:scale-95" onclick="startSearchToAI()"><iconify-icon icon="mdi:arrow-right" style="color:#fff;font-size:14px"></iconify-icon></div>
+</div>
+
+<div class="mb-6">
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-bold text-[14px] text-gray-800">我的简历</h3>
+<span class="text-[11px] text-gray-400 cursor-pointer" onclick="switchPage('page-resume-history')">管理 &gt;</span>
+</div>
+<div class="flex gap-2.5 overflow-x-auto scroll-hide pb-2" id="home-resume-list">
+<div class="resume-card bg-gradient-to-br from-[#EFF6FF] to-white border-[#2563EB]/40 shadow-sm flex flex-col justify-between" onclick="startSearchToAI()">
+    <div class="flex items-center gap-1"><iconify-icon icon="mdi:robot-outline" style="color:#2563EB;font-size:22px"></iconify-icon><span class="text-[8px] bg-[#2563EB] text-white px-1 py-0.5 rounded font-bold">AI</span></div>
+    <div>
+        <div class="text-[12px] font-black text-[#2563EB]">AI智能生成</div>
+        <div class="text-[8px] text-blue-400 mt-0.5">精准对齐大厂考核</div>
+    </div>
+</div>
+<div class="resume-card border-gray-100 shadow-sm"><iconify-icon icon="mdi:file-account" style="color:#6B7280;font-size:20px;margin-bottom:6px"></iconify-icon><div class="text-[12px] font-bold text-gray-800 truncate">通用版基础简历</div><div class="text-[9px] text-gray-400 mt-1">2026.06.10 编辑</div></div>
+<div class="resume-card-add bg-gray-50 border-gray-200" onclick="addNewResume(this)"><iconify-icon icon="mdi:plus" style="color:#9CA3AF;font-size:24px"></iconify-icon></div>
+</div>
+</div>
+
+<div class="mb-5">
+<div class="flex justify-between items-center mb-3">
+<h3 class="font-bold text-[14px] text-gray-800 flex items-center gap-1">校招雷达精选 <iconify-icon icon="mdi:radar" style="color:#2563EB;font-size:16px"></iconify-icon></h3>
+<span class="text-[11px] text-gray-400">全部 &gt;</span>
+</div>
+<div class="flex gap-4 text-[13px] mb-3 overflow-x-auto scroll-hide border-b border-gray-100 pb-2">
+<span class="job-tab font-bold text-[#2563EB] border-b-2 border-[#2563EB] pb-2 cursor-pointer" onclick="switchJobTab('qiu', this)">秋招</span>
+<span class="job-tab text-gray-400 cursor-pointer pb-2" onclick="switchJobTab('chun', this)">春招</span>
+<span class="job-tab text-gray-400 cursor-pointer pb-2" onclick="switchJobTab('shi', this)">实习</span>
+</div>
+<div class="space-y-2.5" id="home-job-list">
+<div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between"><div><div class="text-[13px] font-bold text-gray-800">腾讯 2026届产品经理全球校招批</div><div class="text-[10px] text-gray-400 mt-1">⏰ 网申截止: 2025.10.15</div></div><div class="text-[#2563EB] text-[11px] font-bold cursor-pointer" onclick="viewJobDetail('腾讯 2026届产品经理全球校招批')">查看详情 →</div></div>
+<div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between"><div><div class="text-[13px] font-bold text-gray-800">字节跳动 商业化核心业务运营岗</div><div class="text-[10px] text-gray-400 mt-1">⏰ 网申截止: 2025.09.30</div></div><div class="text-[#2563EB] text-[11px] font-bold cursor-pointer" onclick="viewJobDetail('字节跳动 商业化核心业务运营岗')">查看详情 →</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-jd-detail">
+    <div class="page-inner px-6 pt-5 pb-20 bg-gray-50 flex flex-col relative">
+        <div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+        <div class="bg-white p-5 rounded-2xl shadow-sm mb-4 border border-gray-100">
+            <h2 class="text-[16px] font-bold text-gray-800" id="detail-job-title">腾讯 2026届产品经理</h2>
+            <div class="flex gap-2 mt-2">
+                <span class="bg-blue-50 text-[#2563EB] px-2 py-0.5 rounded text-[10px] font-medium">总部核心区</span>
+                <span class="bg-blue-50 text-[#2563EB] px-2 py-0.5 rounded text-[10px] font-medium">全日制统招</span>
+            </div>
+            <div class="text-[11px] text-gray-400 mt-3">更新：刚刚 · 属于：大厂公开通用批次</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl shadow-sm flex-1 overflow-y-auto scroll-hide">
+            <h3 class="font-bold text-[13px] text-gray-800 mb-2 flex items-center gap-1"><iconify-icon icon="mdi:text-box-search-outline" style="color:#2563EB"></iconify-icon> 官方职责描述</h3>
+            <div class="text-[11px] text-gray-600 leading-relaxed space-y-1.5 border-b border-gray-100 pb-3 mb-3">
+                <p>1. 负责相关核心线的产品生命周期管理，推进架构功能 definition；</p>
+                <p>2. 通过科学敏锐的数据分析，沉淀用户转化漏斗价值；</p>
+                <p>3. 跨越技术、设计、运营等团队实现高质量产品落地交付。</p>
+            </div>
+            <h3 class="font-bold text-[13px] text-gray-800 mb-2">💡 雷达投递策略建议</h3>
+            <div class="text-[11px] text-blue-700 bg-blue-50/50 p-2.5 rounded-xl border border-blue-100">
+                该岗位竞争激烈，AI扫描结果显示其高度绑定“增长与敏锐逻辑”特征。建议通过左侧AI智能模块深度定制专用型自荐信，可提升过筛通过率。
+            </div>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-md">
+            <button class="btn-primary py-3 text-[15px] shadow" onclick="alert('正在唤醒底层原生安全网页浏览器，直达大厂官方网申通道...'); switchPage('page-home');">立即投递职位</button>
+        </div>
+    </div>
+</div>
+
+<div class="page" id="page-resume-history">
+    <div class="page-inner px-6 pt-5 pb-8 bg-gray-50 flex flex-col">
+        <div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回主页</div>
+        <div class="flex justify-between items-end mb-4">
+            <h2 class="text-[18px] font-bold text-gray-800">自荐信管理库</h2>
+            <span class="text-[11px] text-[#2563EB] cursor-pointer font-bold" onclick="startSearchToAI()">+ 智能写新文书</span>
+        </div>
+        <div class="search-bar mb-4 bg-white border border-gray-100 shadow-sm">
+            <iconify-icon icon="mdi:magnify" style="color:#9CA3AF;font-size:18px"></iconify-icon>
+            <input type="text" class="bg-transparent border-none outline-none flex-1 text-[13px] text-gray-700" placeholder="快速检索存档..." />
+        </div>
+        <div class="space-y-2.5 flex-1 overflow-y-auto scroll-hide">
+            <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer active:bg-gray-50">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"><iconify-icon icon="mdi:file-document" style="color:#2563EB;font-size:20px"></iconify-icon></div>
+                    <div>
+                        <div class="text-[13px] font-bold text-gray-800">腾讯 产品经理岗_自荐信</div>
+                        <div class="text-[9px] text-gray-400 mt-0.5">2026.06.10 14:30 更新</div>
+                    </div>
+                </div>
+                <iconify-icon icon="mdi:chevron-right" style="color:#9CA3AF"></iconify-icon>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page" id="page-profile">
+    <div class="page-inner px-6 pt-5 pb-8 bg-gray-50 flex flex-col">
+        <div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回主页</div>
+        <h2 class="text-[18px] font-bold mb-4">个人中心</h2>
+        <div class="bg-white p-4 rounded-xl mb-4 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">我</div>
+            <div class="flex-1">
+                <div class="font-bold text-gray-800 text-[15px]">校招精英玩家</div>
+                <div class="text-[11px] text-gray-400 mt-0.5">UID: 202688888</div>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl mb-4 shadow-sm border border-[#2563EB]">
+            <h3 class="font-bold text-[13px] mb-2 text-[#2563EB] border-b border-blue-50 pb-2">订阅与权益中心</h3>
+            <div class="text-[12px] text-gray-600 py-1.5 flex justify-between items-center"><span>当前套餐</span><span class="text-white font-bold bg-[#2563EB] px-2 py-0.5 rounded shadow text-[10px]">30天 VIP 体验版</span></div>
+            <div class="text-[12px] text-gray-600 py-1.5 flex justify-between items-center"><span>服务截止日期</span><span>2026-07-11</span></div>
+            <div class="flex justify-between items-center pt-3 mt-2 border-t border-gray-100">
+                <div>
+                    <div class="font-bold text-[13px] text-gray-800">无限生成包月计划</div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">解锁全部高阶AI功能</div>
+                </div>
+                <div class="text-[16px] font-bold text-red-500">¥19<span class="text-[10px] text-gray-400">/月</span></div>
+            </div>
+            <button class="btn-primary mt-3 py-2 text-[13px] shadow" onclick="alert('正在调起安全支付组件...')">立即订阅续费</button>
+        </div>
+    </div>
+</div>
+
+<div class="page" id="page-ai-loading">
+<div class="modal-overlay">
+<div class="ai-loading-modal" style="padding:28px 24px;gap:12px;align-items:stretch">
+<div class="flex items-center gap-4 mb-1">
+<div class="ai-loading-icon" style="width:56px;height:56px;flex-shrink:0">
+<div class="doc-layer back" style="width:40px;height:48px;top:3px;left:6px"></div>
+<div class="doc-layer front" style="width:40px;height:48px;top:0;left:0"><iconify-icon icon="mdi:file-document-outline" style="color:#6B7280;font-size:20px"></iconify-icon></div>
+<div class="magnifier" style="width:24px;height:24px;bottom:-1px;right:-3px;font-size:11px"><iconify-icon icon="mdi:magnify" style="font-size:11px"></iconify-icon></div>
+</div>
+<div><h3 class="text-[14px] font-bold text-gray-800">正在拆解 JD 核心</h3></div>
+</div>
+<div class="w-full mt-1">
+<div class="ai-step"><div class="step-icon done" id="load-s1i"><iconify-icon icon="mdi:check" style="font-size:10px"></iconify-icon></div><span id="load-s1t" style="color:#2563EB;font-weight:500">分析企业基本面</span></div>
+<div class="ai-step"><div class="step-icon pending" id="load-s2i"><span style="font-size:9px">⏳</span></div><span id="load-s2t" style="color:#9CA3AF">提取隐性核心要求</span></div>
+<div class="ai-step"><div class="step-icon pending" id="load-s3i"><span style="font-size:9px">⏳</span></div><span id="load-s3t" style="color:#9CA3AF">生成专属底层逻辑</span></div>
+</div>
+<div class="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden"><div class="bg-[#2563EB] h-full rounded-full" id="ai-analyzing-bar" style="width:5%; transition: width 2.2s linear;"></div></div>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-ai-confirm-new">
+<div class="page-inner px-6 pt-5 pb-8 bg-gray-50">
+<div class="nav-back" onclick="switchPage('page-home')"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 取消重来</div>
+<div class="flex items-center justify-between mb-1">
+<h2 class="text-[18px] font-bold text-gray-800">确认公司及岗位于息</h2>
+</div>
+<p class="text-[12px] text-gray-400 mb-4">请仔细检查提取出的关键要素</p>
+<div class="flex-1 overflow-y-auto scroll-hide space-y-3.5">
+    <div class="form-field"><label>企业名称 *</label><input type="text" id="confirm-comp" value="腾讯科技"/></div>
+    <div class="form-field"><label>投递岗位 *</label><input type="text" id="confirm-job" value="2026届大厂产品经理校招公开批"/></div>
+    <div class="form-field"><label>JD核心解读</label>
+    <textarea class="text-[12px] leading-relaxed" style="min-height:160px">【腾讯官方岗位职责逻辑拆解】
+1. 深入挖掘多维生活场景与社交产品锚点需求；
+2. 搭建高精细度数据漏斗模型，对最终转化留存负责；
+3. 推动核心模块演进，具备极强的跨部门沟通能力。</textarea>
+    </div>
+</div>
+<div class="w-full flex gap-2">
+    <button class="flex-1 btn-ghost py-3" onclick="switchPage('page-home')">返回</button>
+    <button class="flex-[2] btn-primary py-3 shadow" onclick="switchPage('page-ai-questions-new')">确定并下一步 →</button>
+</div>
+</div>
+</div>
+
+<div class="page" id="page-ai-questions-new">
+<div class="page-inner px-6 pt-5 pb-8 bg-gray-50">
+<div class="nav-back" onclick="goBack()"><iconify-icon icon="mdi:arrow-left"></iconify-icon> 返回</div>
+<div class="flex items-center justify-between mb-2">
+<h2 class="text-[18px] font-bold text-gray-800">确认网申自荐信结构</h2>
+</div>
+<p class="text-[12px] text-gray-400 mb-4">每个段落问题均支持自由设定字数边界</p>
+<div class="flex-1 overflow-y-auto scroll-hide space-y-3" id="question-list">
+    <div class="flex items-center gap-3 bg-white rounded-xl p-3.5 border border-gray-100 shadow-sm question-item">
+        <div class="flex-1 flex flex-col gap-2">
+            <div class="flex items-center gap-1 border-b border-gray-200 pb-1">
+                <span class="font-bold text-[#2563EB] text-[13px] w-6">Q1.</span>
+                <input type="text" class="bg-transparent border-none outline-none text-[13px] font-bold text-gray-800 w-full" value="为什么想加入腾讯并投递此岗位？(申请动机)">
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
+                <span>限定字数:</span>
+                <input type="number" class="w-16 bg-gray-50 border rounded text-center text-gray-700 font-bold" value="800">
+                <span>字以内</span>
+            </div>
+        </div>
+        <div class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center text-red-400 cursor-pointer flex-shrink-0" onclick="this.parentElement.remove()"><iconify-icon icon="mdi:close" style="font-size:16px"></iconify-icon></div>
+    </div>
+    <div class="flex items-center gap-3 bg-white rounded-xl p-3.5 border border-gray-100 shadow-sm question-item">
+        <div class="flex-1 flex flex-col gap-2">
+            <div class="flex items-center gap-1 border-b border-gray-200 pb-1">
+                <span class="font-bold text-[#2563EB] text-[13px] w-6">Q2.</span>
+                <input type="text" class="bg-transparent border-none outline-none text-[13px] font-bold text-gray-800 w-full" value="如何证明你的数据分析与高抗压能力？(核心能力)">
+            </div>
+            <div class="flex items-center gap-1.5 text-[11px] text-gray-400">
+                <span>限定字数:</span>
+                <input type="number" class="w-16 bg-gray-50 border rounded text-center text-gray-700 font-bold" value="1000">
+                <span>字以内</span>
+            </div>
+        </div>
+        <div class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center text-red-400 cursor-pointer flex-shrink-0" onclick="this.parentElement.remove()"><iconify-icon icon="mdi:close" style="font-size:16px"></iconify-icon></div>
+    </div>
+    <div class="flex items-center justify-center gap-2 border-2 border-dashed border-[#2563EB]/30 bg-blue-50/40 rounded-xl p-3.5 text-[#2563EB] text-[13px] font-bold cursor-pointer" onclick="addQuestionItem(this)">
+        <iconify-icon icon="mdi:plus-circle" style="font-size:16px"></iconify-icon> 增设一条核心考察维度
+    </div>
+</div>
+<button class="btn-primary mt-4 py-3 shadow" onclick="startWorkspace()">绑定经历进入深度生成 →</button>
+</div>
+</div>
+
+<div class="page" id="page-ai-workspace">
+    <div class="split-layout half-half" style="padding-top:44px">
+        <div class="split-left flex flex-col h-full border-r border-gray-200">
+            <div class="px-2 pt-2 pb-0 overflow-x-auto scroll-hide flex gap-1 border-b border-gray-100" id="ws-q-tabs"></div>
+            <div class="px-3 py-2 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
+                <div class="text-[12px] font-bold text-gray-800 truncate" id="ws-q-title">标题同步载入中...</div>
+                <div class="text-[10px] text-red-500 font-medium cursor-pointer" onclick="deleteCurrentTab()">删除此段落</div>
+            </div>
+            <div class="flex-1 p-3 bg-gray-50/20">
+                <textarea id="ws-editor" class="w-full h-full border border-gray-200 rounded-xl p-3 bg-white text-[12px] text-gray-800 leading-relaxed outline-none focus:border-[#2563EB] resize-none" placeholder="等待右侧AI润色填充，或在此直接打字修改..."></textarea>
+            </div>
+            <div class="px-3 py-2 border-t border-gray-100 bg-white">
+                <button class="w-full btn-primary py-2.5 text-[13px] flex items-center justify-center gap-1 shadow-sm" onclick="finishAndReturnHome()">
+                    <iconify-icon icon="mdi:check-all"></iconify-icon> 完成保存并回首页
+                </button>
+            </div>
+        </div>
+        
+        <div class="split-right flex flex-col h-full bg-[#FAFBFC] p-0">
+            <div class="flex gap-0 border-b border-gray-200 bg-white shadow-xs flex-shrink-0">
+                <div class="flex-1 text-center py-2 text-[11px] font-bold text-[#2563EB] border-b-2 border-[#2563EB] cursor-pointer" id="tab-btn-write" onclick="switchWsTab('write')">撰写</div>
+                <div class="flex-1 text-center py-2 text-[11px] text-gray-500 cursor-pointer" id="tab-btn-chat" onclick="switchWsTab('chat')">聊天</div>
+                <div class="flex-1 text-center py-2 text-[11px] text-gray-500 cursor-pointer" id="tab-btn-analyze" onclick="switchWsTab('analyze')">分析</div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-2.5" id="ws-right-content">
+                <div id="ws-panel-write" class="space-y-3">
+                    <div id="ws-write-setup" class="space-y-3">
+                        <div class="text-[11px] font-bold text-gray-700">1. 选择文书语气风格</div>
+                        <div class="space-y-1.5">
+                            <div class="border-2 border-[#2563EB] bg-blue-50/50 rounded-xl p-2 cursor-pointer tone-card" onclick="selectToneWs(this)">
+                                <div class="text-[12px] font-bold text-[#2563EB]">大厂专业正式版</div>
+                                <div class="text-[10px] text-gray-400 mt-0.5">严谨结构化思维，强调数据指标</div>
+                            </div>
+                            <div class="border border-gray-200 bg-white rounded-xl p-2 cursor-pointer tone-card" onclick="selectToneWs(this)">
+                                <div class="text-[12px] font-bold text-gray-700">真诚热情潜力版</div>
+                                <div class="text-[10px] text-gray-400 mt-0.5">突出强烈意愿、学习力与软素质</div>
+                            </div>
+                        </div>
+                        <div class="text-[11px] font-bold text-gray-700 pt-1">2. 绑定核心个人经验</div>
+                        <div class="border border-gray-200 rounded-xl p-2.5 bg-white space-y-1.5 shadow-2xs">
+                            <label class="flex items-start gap-1.5 cursor-pointer">
+                                <input type="checkbox" checked class="mt-0.5 accent-blue-600">
+                                <span class="text-[11px] text-gray-700 leading-tight">字节产品增长实习项目 (含A/B测试与核心数据转化经验)</span>
+                            </label>
+                        </div>
+                        <button class="w-full bg-[#2563EB] text-white font-bold text-[12px] py-2 rounded-lg shadow mt-2" onclick="triggerAIEngineRun()">⚡ 一键启动引擎生成</button>
+                    </div>
+
+                    <div id="ws-write-loading" class="hidden py-10 flex flex-col items-center justify-center space-y-2">
+                        <div class="loading-spinner w-7 h-7 border-3"></div>
+                        <div class="text-[12px] text-[#2563EB] font-bold">AI 深度对齐生成中...</div>
+                    </div>
+
+                    <div id="ws-write-compare" class="hidden space-y-3">
+                        <div class="text-[11px] font-bold text-gray-800 flex justify-between items-center">
+                            <span>AI 版本智能对比优选</span>
+                            <span class="text-[10px] text-gray-400 cursor-pointer" onclick="resetWriteSetup()">● 重新配置</span>
+                        </div>
+                        <div class="bg-white border-2 border-[#2563EB]/40 rounded-xl p-2.5 shadow-2xs">
+                            <div class="flex justify-between items-center mb-1 border-b pb-1">
+                                <span class="text-[11px] font-bold text-[#2563EB]">版本 A (逻辑严密)</span>
+                                <button class="bg-[#2563EB] text-white text-[9px] px-2 py-0.5 rounded font-bold" onclick="applyToLeftEditor('A')">应用此版</button>
+                            </div>
+                            <div class="text-[9px] text-gray-500 leading-relaxed h-16 overflow-y-auto scroll-hide" id="txt-ver-a">结合腾讯此次网申对高效数据化指标的要求，我在实习中通过全面建立精细化的A/B科学拆分测试模型对长链漏斗进行演进，成功将核心留存转化水平环比拔高15%。</div>
+                        </div>
+                        <div class="bg-white border border-purple-200 rounded-xl p-2.5 shadow-2xs">
+                            <div class="flex justify-between items-center mb-1 border-b pb-1">
+                                <span class="text-[11px] font-bold text-purple-600">版本 B (潜力驱动)</span>
+                                <button class="bg-purple-500 text-white text-[9px] px-2 py-0.5 rounded font-bold" onclick="applyToLeftEditor('B')">应用此版</button>
+                            </div>
+                            <div class="text-[9px] text-gray-500 leading-relaxed h-16 overflow-y-auto scroll-hide" id="txt-ver-b">带着对互联网产品经理的极致热情，我曾在之前的增长实习中坚持深入第一线去复盘痛点数据，具备极强的落地同理心与快速学习破局的潜能。</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="ws-panel-chat" class="hidden flex flex-col h-[280px] bg-white rounded-xl border border-gray-100 overflow-hidden">
+                    <div class="flex-1 p-2 bg-gray-50/50 text-[10px] text-gray-600 space-y-2 overflow-y-auto scroll-hide">
+                        <div class="flex gap-1.5 items-start">
+                            <div class="w-5 h-5 bg-[#2563EB] text-white rounded-full flex items-center justify-center text-[10px]"><iconify-icon icon="mdi:robot"></iconify-icon></div>
+                            <p class="bg-white p-2 rounded-r-xl rounded-bl-xl border border-gray-100 shadow-3xs leading-relaxed">对生成的内容不满意？<br>你可以发送指令如：<br><span class="text-[#2563EB]">"把结构改为总分总"</span> 或 <span class="text-purple-600">"去掉口语化表达"</span></p>
+                        </div>
+                    </div>
+                    <div class="p-1.5 border-t border-gray-100 flex items-center gap-1.5 bg-white">
+                        <input type="text" class="flex-1 bg-gray-50 border-none outline-none rounded-full px-2.5 py-1 text-[11px]" placeholder="给雷达下达修改指令...">
+                        <button class="w-6 h-6 bg-[#2563EB] text-white rounded-full flex items-center justify-center shadow" onclick="alert('指令已成功送达AI微调核心')"><iconify-icon icon="mdi:send" style="font-size:12px"></iconify-icon></button>
+                    </div>
+                </div>
+
+                <div id="ws-panel-analyze" class="hidden space-y-2">
+                    <div class="bg-white p-2.5 rounded-xl border border-gray-100 shadow-3xs text-[11px] text-gray-600 space-y-1.5">
+                        <div class="font-bold text-gray-800 border-b pb-1 mb-1 text-[12px] text-[#2563EB]">🎯 大厂JD 画像多维诊断</div>
+                        <p>• <span class="font-bold text-gray-800">考察核心：</span>核心产品思维框架与量化指标交付能力</p>
+                        <p>• <span class="font-bold text-gray-800">避坑要点：</span>文书通篇切忌出现过多主观情感化描述，必须由“数据支撑”。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="loading-overlay" id="global-loading">
+<div class="loading-spinner"></div>
+<p class="mt-4 text-[14px] text-[#2563EB] font-medium">安全通信连接中...</p>
+</div>
+</div>
+
+<script>
+// === MBTI Logic ===
+let mbtiScore = 0;
+function answerMbti(score, nextPage) {
+    mbtiScore += score;
+    if(nextPage === 'page-mbti-result') {
+        calculateMbtiResult();
+    }
+    switchPage(nextPage);
+}
+
+function calculateMbtiResult() {
+    let titleEl = document.getElementById('mbti-title');
+    let descEl = document.getElementById('mbti-desc');
+    let solutionEl = document.getElementById('mbti-solution');
+
+    if(mbtiScore <= 2) {
+        titleEl.innerText = "小白探索型";
+        descEl.innerText = "你目前没有相应的对口大厂经历，或者经历太散。面对心仪的岗位常常感到自卑，不知如何包装自己。";
+        solutionEl.innerText = "AI 将深度挖掘你的校园日常闪光点（如课堂作业、社团统筹），将其转化为大厂青睐的底层能力框架！";
+    } else if(mbtiScore <= 4) {
+        titleEl.innerText = "迷茫碰壁型";
+        descEl.innerText = "你做过很多事，但很难提炼出高大上的关键词对齐岗位要求。经常海投，但总在初筛就被无情刷掉。";
+        solutionEl.innerText = "AI 会根据目标岗位的JD要求，帮你砍掉废话，精准对齐核心考核指标，一键生成投其所好的定制简历！";
+    } else {
+        titleEl.innerText = "疲惫卷王型";
+        descEl.innerText = "你实力在线，也懂套路。但秋招需要海投，每次都要针对繁复的JD重新修改排版，极其耗费心智与精力。";
+        solutionEl.innerText = "无需再手动改字句！只需扔给 AI 一个JD链接，10秒内全自动对齐重写，拯救你的投递时间！";
+    }
+}
+
+// === Global Navigation ===
+var pageHistory = ['page-welcome'];
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById(pageId);
+  if (target) {
+      target.classList.add('active');
+      if (pageHistory[pageHistory.length - 1] !== pageId) {
+          pageHistory.push(pageId);
+      }
+  }
+}
+
+function goBack() {
+  if (pageHistory.length > 1) {
+      pageHistory.pop();
+      var prevId = pageHistory[pageHistory.length - 1];
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      var target = document.getElementById(prevId);
+      if (target) target.classList.add('active');
+  }
+}
+
+function startSearchToAI() {
+    switchPage('page-ai-loading');
+    var bar = document.getElementById('ai-analyzing-bar');
+    var load2i = document.getElementById('load-s2i'), load2t = document.getElementById('load-s2t');
+    var load3i = document.getElementById('load-s3i'), load3t = document.getElementById('load-s3t');
+    bar.style.width = '5%';
+    setTimeout(() => {
+        bar.style.width = '45%';
+        load2i.innerHTML = '<iconify-icon icon="mdi:check" style="font-size:10px"></iconify-icon>';
+        load2i.className = 'step-icon done';
+        load2t.style.color = '#2563EB'; load2t.style.fontWeight = '600';
+    }, 600);
+    setTimeout(() => {
+        bar.style.width = '85%';
+        load3i.innerHTML = '<iconify-icon icon="mdi:check" style="font-size:10px"></iconify-icon>';
+        load3i.className = 'step-icon done';
+        load3t.style.color = '#2563EB'; load3t.style.fontWeight = '600';
+    }, 1200);
+    setTimeout(() => {
+        bar.style.width = '100%';
+        setTimeout(() => switchPage('page-ai-confirm-new'), 300);
+    }, 1800);
+}
+
+function addNewResume(btn) {
+    var newCard = document.createElement('div');
+    newCard.className = 'resume-card border-gray-100 shadow-sm';
+    newCard.innerHTML = '<iconify-icon icon="mdi:file-account" style="color:#6B7280;font-size:20px;margin-bottom:6px"></iconify-icon><div class="text-[12px] font-bold text-gray-800 truncate">未命名简历</div><div class="text-[9px] text-gray-400 mt-1">刚刚 创建</div>';
+    btn.parentNode.insertBefore(newCard, btn);
+}
+
+function switchJobTab(type, el) {
+    el.parentElement.querySelectorAll('.job-tab').forEach(t => t.className = "job-tab text-gray-400 cursor-pointer pb-2");
+    el.className = "job-tab font-bold text-[#2563EB] border-b-2 border-[#2563EB] pb-2 cursor-pointer";
+    var list = document.getElementById('home-job-list');
+    if (type === 'qiu') {
+        list.innerHTML = `<div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between"><div><div class="text-[13px] font-bold text-gray-800">腾讯 2026届产品经理全球校招批</div><div class="text-[10px] text-gray-400 mt-1">⏰ 网申截止: 2025.10.15</div></div><div class="text-[#2563EB] text-[11px] font-bold cursor-pointer" onclick="viewJobDetail('腾讯 2026届产品经理全球校招批')">查看详情 →</div></div>
+                         <div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between"><div><div class="text-[13px] font-bold text-gray-800">字节跳动 商业化核心业务运营岗</div><div class="text-[10px] text-gray-400 mt-1">⏰ 网申截止: 2025.09.30</div></div><div class="text-[#2563EB] text-[11px] font-bold cursor-pointer" onclick="viewJobDetail('字节跳动 商业化核心业务运营岗')">查看详情 →</div></div>`;
+    } else if (type === 'chun') {
+        list.innerHTML = `<div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between"><div><div class="text-[13px] font-bold text-gray-800">阿里巴巴 核心技术春招补录</div><div class="text-[10px] text-gray-400 mt-1">⏰ 网申截止: 2025.04.30</div></div><div class="text-[#2563EB] text-[11px] font-bold cursor-pointer" onclick="viewJobDetail('阿里巴巴 核心技术春招补录')">查看详情 →</div></div>`;
+    } else if (type === 'shi') {
+        list.innerHTML = `<div class="bg-white p-3.5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between"><div><div class="text-[13px] font-bold text-gray-800">美团 2026届日常/暑期产品实习</div><div class="text-[10px] text-gray-400 mt-1">⏰ 长期推进行程</div></div><div class="text-[#2563EB] text-[11px] font-bold cursor-pointer" onclick="viewJobDetail('美团 2026届日常/暑期产品实习')">查看详情 →</div></div>`;
+    }
+}
+
+function viewJobDetail(title) {
+    document.getElementById('detail-job-title').innerText = title;
+    switchPage('page-jd-detail');
+}
+
+function toggleTag(el, group) {
+  el.parentElement.querySelectorAll('.tag').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectInfo1(el) {
+  document.querySelectorAll('#page-info-1 .option-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('next-1').disabled = false;
+}
+function selectInfo2(el) {
+  document.querySelectorAll('#page-info-2 .option-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('next-2').disabled = false;
+}
+
+function mockLogin() {
+  const loading = document.getElementById('global-loading');
+  loading.classList.add('show');
+  setTimeout(() => {
+    loading.classList.remove('show');
+    switchPage('page-info-1');
+  }, 1000);
+}
+
+function addQuestionItem(btn) {
+    const list = document.getElementById('question-list');
+    const count = list.querySelectorAll('.question-item').length + 1;
+    const div = document.createElement('div');
+    div.className = 'flex items-center gap-3 bg-white rounded-xl p-3.5 border border-gray-100 shadow-sm question-item';
+    div.innerHTML = `<div class="flex-1 flex flex-col gap-2"><div class="flex items-center gap-1 border-b border-gray-200 pb-1"><span class="font-bold text-[#2563EB] text-[13px] w-6">Q${count}.</span><input type="text" class="bg-transparent border-none outline-none text-[13px] font-bold text-gray-800 w-full" value="新增核心考察维度"></div><div class="flex items-center gap-1.5 text-[11px] text-gray-400"><span>限定字数:</span><input type="number" class="w-16 bg-gray-50 border rounded text-center text-gray-700 font-bold" value="1000"><span>字以内</span></div></div><div class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center text-red-400 cursor-pointer flex-shrink-0" onclick="this.parentElement.remove()"><iconify-icon icon="mdi:close" style="font-size:16px"></iconify-icon></div>`;
+    list.insertBefore(div, btn);
+}
+
+let userWorkspaceQuestions = [];
+let currentWorkspaceIdx = 0;
+function startWorkspace() {
+    userWorkspaceQuestions = [];
+    document.querySelectorAll('#question-list .question-item').forEach((item, index) => {
+        userWorkspaceQuestions.push({id: index + 1, title: item.querySelector('input[type="text"]').value, text: ''});
+    });
+    renderWorkspaceTabs();
+    switchWorkspaceQ(0);
+    switchPage('page-ai-workspace');
+}
+function renderWorkspaceTabs() {
+    const container = document.getElementById('ws-q-tabs');
+    container.innerHTML = '';
+    userWorkspaceQuestions.forEach((q, idx) => {
+        let div = document.createElement('div');
+        div.className = "px-3 py-1.5 text-[12px] font-bold cursor-pointer ws-dynamic-tab whitespace-nowrap rounded-t-lg transition";
+        div.innerText = "Q" + q.id;
+        div.onclick = function() { switchWorkspaceQ(idx); };
+        container.appendChild(div);
+    });
+}
+function switchWorkspaceQ(index) {
+    const editor = document.getElementById('ws-editor');
+    if(userWorkspaceQuestions[currentWorkspaceIdx]) userWorkspaceQuestions[currentWorkspaceIdx].text = editor.value;
+    currentWorkspaceIdx = index;
+    const currentData = userWorkspaceQuestions[currentWorkspaceIdx];
+    document.querySelectorAll('.ws-dynamic-tab').forEach((t, i) => {
+        t.className = i === index ? "px-3.5 py-1.5 text-[12px] font-black cursor-pointer ws-dynamic-tab whitespace-nowrap bg-gray-50 text-[#2563EB] border-b-2 border-[#2563EB] rounded-t-lg" : "px-3.5 py-1.5 text-[12px] font-medium cursor-pointer ws-dynamic-tab whitespace-nowrap text-gray-400 hover:text-gray-600";
+    });
+    document.getElementById('ws-q-title').innerText = currentData.title;
+    editor.value = currentData.text;
+    switchWsTab('write');
+    resetWriteSetup();
+}
+function deleteCurrentTab() {
+    if(userWorkspaceQuestions.length <= 1) { alert("必须保留至少一个核心段落！"); return; }
+    userWorkspaceQuestions.splice(currentWorkspaceIdx, 1);
+    userWorkspaceQuestions.forEach((q, i) => q.id = i + 1);
+    renderWorkspaceTabs();
+    switchWorkspaceQ(0);
+}
+function switchWsTab(tabName) {
+    ['write', 'chat', 'analyze'].forEach(t => {
+        document.getElementById('tab-btn-' + t).className = t === tabName ? "flex-1 text-center py-2 text-[11px] font-black text-[#2563EB] border-b-2 border-[#2563EB] cursor-pointer bg-blue-50/40 transition" : "flex-1 text-center py-2 text-[11px] text-gray-500 cursor-pointer bg-white hover:bg-gray-50 border-b border-transparent transition";
+    });
+    document.getElementById('ws-panel-write').classList.toggle('hidden', tabName !== 'write');
+    document.getElementById('ws-panel-chat').classList.toggle('hidden', tabName !== 'chat');
+    document.getElementById('ws-panel-analyze').classList.toggle('hidden', tabName !== 'analyze');
+}
+function selectToneWs(el) {
+    el.parentElement.querySelectorAll('.tone-card').forEach(c => {
+        c.className = "border border-gray-200 bg-white rounded-xl p-2 cursor-pointer tone-card";
+        if(c.querySelector('.font-bold')) c.querySelector('.font-bold').className = "text-[12px] font-bold text-gray-700";
+    });
+    el.className = "border-2 border-[#2563EB] bg-blue-50/50 rounded-xl p-2 cursor-pointer tone-card";
+    if(el.querySelector('.font-bold')) el.querySelector('.font-bold').className = "text-[12px] font-bold text-[#2563EB]";
+}
+function resetWriteSetup() {
+    document.getElementById('ws-write-setup').classList.remove('hidden');
+    document.getElementById('ws-write-loading').classList.add('hidden');
+    document.getElementById('ws-write-compare').classList.add('hidden');
+}
+function triggerAIEngineRun() {
+    document.getElementById('ws-write-setup').classList.add('hidden');
+    document.getElementById('ws-write-loading').classList.remove('hidden');
+    setTimeout(() => {
+        document.getElementById('ws-write-loading').classList.add('hidden');
+        document.getElementById('ws-write-compare').classList.remove('hidden');
+    }, 1000);
+}
+function applyToLeftEditor(version) {
+    document.getElementById('ws-editor').value = version === 'A' ? document.getElementById('txt-ver-a').innerText : document.getElementById('txt-ver-b').innerText;
+}
+function finishAndReturnHome() {
+    if(userWorkspaceQuestions[currentWorkspaceIdx]) userWorkspaceQuestions[currentWorkspaceIdx].text = document.getElementById('ws-editor').value;
+    var listContainer = document.getElementById('home-resume-list');
+    var newCardItem = document.createElement('div');
+    newCardItem.className = 'resume-card border-[#2563EB] border shadow bg-blue-50/30 flex flex-col justify-between';
+    newCardItem.innerHTML = `<div class="flex items-center justify-between"><iconify-icon icon="mdi:file-star" style="color:#2563EB;font-size:22px"></iconify-icon><span class="text-[8px] bg-red-500 text-white px-1.5 py-0.5 rounded font-black animate-pulse">NEW</span></div><div><div class="text-[12px] font-black text-gray-800 truncate">全新对齐大厂简历</div><div class="text-[8px] text-[#2563EB] mt-0.5">刚刚 智能重构完成</div></div>`;
+    listContainer.insertBefore(newCardItem, listContainer.children[1]);
+    switchPage('page-home');
+}
+
+var isSpinning = false;
+function startWheelSpin() {
+  if (isSpinning) return;
+  isSpinning = true;
+  var ball = document.getElementById('wheel-ball');
+  var totalAngle = 2160 + 45;
+  var startTime = performance.now();
+  function animate(time) {
+    var progress = Math.min((time - startTime) / 3200, 1);
+    var eased = 1 - Math.pow(1 - progress, 3);
+    var currentAngle = (totalAngle * eased) * Math.PI / 180;
+    ball.style.left = (140 + 131 * Math.cos(currentAngle) - 9) + 'px';
+    ball.style.top = (140 + 131 * Math.sin(currentAngle) - 9) + 'px';
+    if (progress < 1) requestAnimationFrame(animate);
+    else {
+      isSpinning = false;
+      document.getElementById('wheel-result').textContent = '🥇 恭喜中奖：30天全功能VIP卡！';
+      document.getElementById('wheel-result').classList.remove('hidden');
+      document.getElementById('wheel-claim-btn').classList.remove('hidden');
+    }
+  }
+  requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
